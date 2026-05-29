@@ -1,5 +1,6 @@
 package com.aksenova.additivesmanager.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -51,6 +52,7 @@ public class Product {
     @Column(name = "sgr_number", length = 100)
     private String sgrNumber;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "sgr_registration_date")
     private LocalDate sgrRegistrationDate;
 

@@ -35,3 +35,14 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Environment ###
+.env
+.env.*
+application-local.properties
+
+### Frontend build ###
+frontend/**/bin/
+frontend/**/obj/
+frontend/**/publish/
+frontend/**/publish_new/

@@ -1,5 +1,13 @@
 build/
 .gradle/
-*.md
 .git/
 .gitignore
+*.md
+.env
+.env.*
+frontend/
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
