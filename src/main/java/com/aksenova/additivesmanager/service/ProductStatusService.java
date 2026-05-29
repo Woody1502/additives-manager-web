@@ -1,10 +1,9 @@
 package com.aksenova.additivesmanager.service;
 
+import com.aksenova.additivesmanager.dto.ProductStatusDto;
 import com.aksenova.additivesmanager.entity.ProductStatus;
 import com.aksenova.additivesmanager.repository.ProductStatusRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,19 +18,20 @@ public class ProductStatusService {
     private final ProductStatusRepository productStatusRepository;
 
     @Transactional
-    public ProductStatus createProductStatus(ProductStatus productStatus) {
+    public ProductStatus createProductStatus(ProductStatusDto dto) {
+        ProductStatus productStatus = new ProductStatus();
+        productStatus.setStatusName(dto.getStatusName());
+        productStatus.setDescription(dto.getDescription());
         return productStatusRepository.save(productStatus);
     }
 
     @Transactional
-    public ProductStatus updateProductStatus(Integer id, ProductStatus updatedStatus) {
-        ProductStatus existingStatus = productStatusRepository.findById(id)
+    public ProductStatus updateProductStatus(Integer id, ProductStatusDto dto) {
+        ProductStatus existing = productStatusRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product status not found with id: " + id));
-
-        existingStatus.setStatusName(updatedStatus.getStatusName());
-        existingStatus.setDescription(updatedStatus.getDescription());
-
-        return productStatusRepository.save(existingStatus);
+        existing.setStatusName(dto.getStatusName());
+        existing.setDescription(dto.getDescription());
+        return productStatusRepository.save(existing);
     }
 
     @Transactional
@@ -46,5 +46,4 @@ public class ProductStatusService {
     public List<ProductStatus> getAllProductStatuses() {
         return productStatusRepository.findAll();
     }
-
 }

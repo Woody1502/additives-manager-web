@@ -1,12 +1,15 @@
 package com.aksenova.additivesmanager.controllers;
 
+import com.aksenova.additivesmanager.dto.ProductStatusDto;
 import com.aksenova.additivesmanager.entity.ProductStatus;
 import com.aksenova.additivesmanager.service.ProductStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/product-statuses")
@@ -28,14 +31,14 @@ public class ProductStatusController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductStatus> create(@RequestBody ProductStatus productStatus) {
-        return ResponseEntity.ok(productStatusService.createProductStatus(productStatus));
+    public ResponseEntity<ProductStatus> create(@Valid @RequestBody ProductStatusDto dto) {
+        return ResponseEntity.ok(productStatusService.createProductStatus(dto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductStatus> update(@PathVariable Integer id,
-                                                @RequestBody ProductStatus productStatus) {
-        return ResponseEntity.ok(productStatusService.updateProductStatus(id, productStatus));
+                                                @Valid @RequestBody ProductStatusDto dto) {
+        return ResponseEntity.ok(productStatusService.updateProductStatus(id, dto));
     }
 
     @DeleteMapping("/{id}")

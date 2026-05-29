@@ -1,5 +1,6 @@
 package com.aksenova.additivesmanager.service;
 
+import com.aksenova.additivesmanager.dto.ManufacturerDto;
 import com.aksenova.additivesmanager.entity.Manufacturer;
 import com.aksenova.additivesmanager.repository.ManufacturerRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,25 +18,18 @@ public class ManufacturerService {
     private final ManufacturerRepository manufacturerRepository;
 
     @Transactional
-    public Manufacturer createManufacturer(Manufacturer manufacturer) {
+    public Manufacturer createManufacturer(ManufacturerDto dto) {
+        Manufacturer manufacturer = new Manufacturer();
+        mapDtoToManufacturer(dto, manufacturer);
         return manufacturerRepository.save(manufacturer);
     }
 
     @Transactional
-    public Manufacturer updateManufacturer(Integer id, Manufacturer updatedManufacturer) {
-        Manufacturer existingManufacturer = manufacturerRepository.findById(id)
+    public Manufacturer updateManufacturer(Integer id, ManufacturerDto dto) {
+        Manufacturer existing = manufacturerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Manufacturer not found with id: " + id));
-
-        existingManufacturer.setName(updatedManufacturer.getName());
-        existingManufacturer.setCountry(updatedManufacturer.getCountry());
-        existingManufacturer.setLegalAddress(updatedManufacturer.getLegalAddress());
-        existingManufacturer.setInn(updatedManufacturer.getInn());
-        existingManufacturer.setOgrn(updatedManufacturer.getOgrn());
-        existingManufacturer.setContactPhone(updatedManufacturer.getContactPhone());
-        existingManufacturer.setContactEmail(updatedManufacturer.getContactEmail());
-        existingManufacturer.setWebsite(updatedManufacturer.getWebsite());
-
-        return manufacturerRepository.save(existingManufacturer);
+        mapDtoToManufacturer(dto, existing);
+        return manufacturerRepository.save(existing);
     }
 
     @Transactional
@@ -49,5 +43,16 @@ public class ManufacturerService {
 
     public List<Manufacturer> getAllManufacturers() {
         return manufacturerRepository.findAll();
+    }
+
+    private void mapDtoToManufacturer(ManufacturerDto dto, Manufacturer manufacturer) {
+        manufacturer.setName(dto.getName());
+        manufacturer.setCountry(dto.getCountry());
+        manufacturer.setLegalAddress(dto.getLegalAddress());
+        manufacturer.setInn(dto.getInn());
+        manufacturer.setOgrn(dto.getOgrn());
+        manufacturer.setContactPhone(dto.getContactPhone());
+        manufacturer.setContactEmail(dto.getContactEmail());
+        manufacturer.setWebsite(dto.getWebsite());
     }
 }

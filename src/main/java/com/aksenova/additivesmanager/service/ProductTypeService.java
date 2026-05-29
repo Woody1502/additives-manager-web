@@ -1,5 +1,6 @@
 package com.aksenova.additivesmanager.service;
 
+import com.aksenova.additivesmanager.dto.ProductTypeDto;
 import com.aksenova.additivesmanager.entity.ProductType;
 import com.aksenova.additivesmanager.repository.ProductTypeRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,19 +18,20 @@ public class ProductTypeService {
     private final ProductTypeRepository productTypeRepository;
 
     @Transactional
-    public ProductType createProductType(ProductType productType) {
+    public ProductType createProductType(ProductTypeDto dto) {
+        ProductType productType = new ProductType();
+        productType.setTypeName(dto.getTypeName());
+        productType.setDescription(dto.getDescription());
         return productTypeRepository.save(productType);
     }
 
     @Transactional
-    public ProductType updateProductType(Integer id, ProductType updatedType) {
-        ProductType existingType = productTypeRepository.findById(id)
+    public ProductType updateProductType(Integer id, ProductTypeDto dto) {
+        ProductType existing = productTypeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product type not found with id: " + id));
-
-        existingType.setTypeName(updatedType.getTypeName());
-        existingType.setDescription(updatedType.getDescription());
-
-        return productTypeRepository.save(existingType);
+        existing.setTypeName(dto.getTypeName());
+        existing.setDescription(dto.getDescription());
+        return productTypeRepository.save(existing);
     }
 
     @Transactional
@@ -44,5 +46,4 @@ public class ProductTypeService {
     public List<ProductType> getAllProductTypes() {
         return productTypeRepository.findAll();
     }
-
 }

@@ -40,7 +40,7 @@ public class Product {
     @Column(name = "release_form", length = 100)
     private String releaseForm;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "product_manufacturer",
             joinColumns = @JoinColumn(name = "product_id"),

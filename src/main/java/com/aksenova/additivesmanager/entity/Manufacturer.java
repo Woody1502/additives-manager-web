@@ -57,6 +57,6 @@ public class Manufacturer {
     private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "manufacturers")
-    @JsonIgnoreProperties("manufacturers")
+    @JsonIgnore
     private List<Product> products = new ArrayList<>();
 }

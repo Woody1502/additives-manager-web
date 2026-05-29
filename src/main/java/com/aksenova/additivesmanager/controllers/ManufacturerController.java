@@ -1,12 +1,15 @@
 package com.aksenova.additivesmanager.controllers;
 
+import com.aksenova.additivesmanager.dto.ManufacturerDto;
 import com.aksenova.additivesmanager.entity.Manufacturer;
 import com.aksenova.additivesmanager.service.ManufacturerService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/manufacturers")
@@ -28,14 +31,14 @@ public class ManufacturerController {
     }
 
     @PostMapping
-    public ResponseEntity<Manufacturer> create(@RequestBody Manufacturer manufacturer) {
-        return ResponseEntity.ok(manufacturerService.createManufacturer(manufacturer));
+    public ResponseEntity<Manufacturer> create(@Valid @RequestBody ManufacturerDto dto) {
+        return ResponseEntity.ok(manufacturerService.createManufacturer(dto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Manufacturer> update(@PathVariable Integer id,
-                                               @RequestBody Manufacturer manufacturer) {
-        return ResponseEntity.ok(manufacturerService.updateManufacturer(id, manufacturer));
+                                               @Valid @RequestBody ManufacturerDto dto) {
+        return ResponseEntity.ok(manufacturerService.updateManufacturer(id, dto));
     }
 
     @DeleteMapping("/{id}")
