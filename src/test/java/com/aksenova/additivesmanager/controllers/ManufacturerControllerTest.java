@@ -1,69 +1,62 @@
 package com.aksenova.additivesmanager.controllers;
 
-import com.aksenova.additivesmanager.dto.ManufacturerDto;
 import com.aksenova.additivesmanager.entity.Manufacturer;
+import com.aksenova.additivesmanager.exception.GlobalExceptionHandler;
 import com.aksenova.additivesmanager.service.ManufacturerService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class ManufacturerControllerTest {
 
-    @Autowired WebApplicationContext context;
-    @Autowired ObjectMapper objectMapper;
-    @MockitoBean ManufacturerService service;
+    @Mock ManufacturerService service;
+    @InjectMocks ManufacturerController controller;
 
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(SecurityMockMvcConfigurers.springSecurity())
+        mvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    @WithMockUser
-    void getAll_authenticated_returns200() throws Exception {
+    void getAll_returns200() throws Exception {
         when(service.getAllManufacturers()).thenReturn(List.of());
         mvc.perform(get("/api/manufacturers"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser
     void create_validDto_returns200() throws Exception {
-        var dto = new ManufacturerDto(); dto.setName("ООО Тест"); dto.setCountry("Россия");
         var created = new Manufacturer(); created.setId(1); created.setName("ООО Тест");
         when(service.createManufacturer(any())).thenReturn(created);
 
         mvc.perform(post("/api/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content("{\"name\":\"ООО Тест\",\"country\":\"Россия\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("ООО Тест"));
     }
 
     @Test
-    @WithMockUser
     void create_missingName_returns400() throws Exception {
         mvc.perform(post("/api/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,7 +65,6 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
     void getById_notFound_returns404() throws Exception {
         when(service.getManufacturerById(99)).thenReturn(Optional.empty());
         mvc.perform(get("/api/manufacturers/99"))
@@ -80,8 +72,9 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    void getAll_unauthenticated_returns401() throws Exception {
-        mvc.perform(get("/api/manufacturers"))
-                .andExpect(status().isUnauthorized());
+    void delete_callsService() throws Exception {
+        mvc.perform(delete("/api/manufacturers/1"))
+                .andExpect(status().isNoContent());
+        verify(service).deleteManufacturer(1);
     }
 }

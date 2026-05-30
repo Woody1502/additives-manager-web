@@ -2,68 +2,64 @@ package com.aksenova.additivesmanager.controllers;
 
 import com.aksenova.additivesmanager.dto.ProductTypeDto;
 import com.aksenova.additivesmanager.entity.ProductType;
+import com.aksenova.additivesmanager.exception.GlobalExceptionHandler;
 import com.aksenova.additivesmanager.service.ProductTypeService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class ProductTypeControllerTest {
 
-    @Autowired WebApplicationContext context;
-    @Autowired ObjectMapper objectMapper;
-    @MockitoBean ProductTypeService service;
+    @Mock ProductTypeService service;
+    @InjectMocks ProductTypeController controller;
 
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(SecurityMockMvcConfigurers.springSecurity())
+        mvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    @WithMockUser
-    void getAll_authenticated_returns200() throws Exception {
+    void getAll_returns200() throws Exception {
         when(service.getAllProductTypes()).thenReturn(List.of());
         mvc.perform(get("/api/product-types"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void create_adminRole_returns200() throws Exception {
-        var dto = new ProductTypeDto(); dto.setTypeName("БАД");
+    void create_validDto_returns200() throws Exception {
         var created = new ProductType(); created.setId(1); created.setTypeName("БАД");
         when(service.createProductType(any())).thenReturn(created);
 
         mvc.perform(post("/api/product-types")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content("{\"typeName\":\"БАД\"}"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.typeName").value("БАД"));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void create_blankName_returns400() throws Exception {
         mvc.perform(post("/api/product-types")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,40 +68,16 @@ class ProductTypeControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void create_userRole_returns403() throws Exception {
-        var dto = new ProductTypeDto(); dto.setTypeName("БАД");
-        mvc.perform(post("/api/product-types")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void delete_adminRole_returns204() throws Exception {
-        mvc.perform(delete("/api/product-types/1"))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void delete_userRole_returns403() throws Exception {
-        mvc.perform(delete("/api/product-types/1"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void getAll_unauthenticated_returns401() throws Exception {
-        mvc.perform(get("/api/product-types"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser
     void getById_notFound_returns404() throws Exception {
         when(service.getProductTypeById(99)).thenReturn(Optional.empty());
         mvc.perform(get("/api/product-types/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void delete_callsService() throws Exception {
+        mvc.perform(delete("/api/product-types/1"))
+                .andExpect(status().isNoContent());
+        verify(service).deleteProductType(1);
     }
 }

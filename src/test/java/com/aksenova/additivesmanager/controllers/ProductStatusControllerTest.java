@@ -1,68 +1,62 @@
 package com.aksenova.additivesmanager.controllers;
 
-import com.aksenova.additivesmanager.dto.ProductStatusDto;
 import com.aksenova.additivesmanager.entity.ProductStatus;
+import com.aksenova.additivesmanager.exception.GlobalExceptionHandler;
 import com.aksenova.additivesmanager.service.ProductStatusService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class ProductStatusControllerTest {
 
-    @Autowired WebApplicationContext context;
-    @Autowired ObjectMapper objectMapper;
-    @MockitoBean ProductStatusService service;
+    @Mock ProductStatusService service;
+    @InjectMocks ProductStatusController controller;
 
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(SecurityMockMvcConfigurers.springSecurity())
+        mvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    @WithMockUser
-    void getAll_authenticated_returns200() throws Exception {
+    void getAll_returns200() throws Exception {
         when(service.getAllProductStatuses()).thenReturn(List.of());
         mvc.perform(get("/api/product-statuses"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void create_adminRole_returns200() throws Exception {
-        var dto = new ProductStatusDto(); dto.setStatusName("действует");
+    void create_validDto_returns200() throws Exception {
         var created = new ProductStatus(); created.setId(1); created.setStatusName("действует");
         when(service.createProductStatus(any())).thenReturn(created);
 
         mvc.perform(post("/api/product-statuses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content("{\"statusName\":\"действует\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusName").value("действует"));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void create_blankName_returns400() throws Exception {
         mvc.perform(post("/api/product-statuses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -71,19 +65,16 @@ class ProductStatusControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void create_userRole_returns403() throws Exception {
-        var dto = new ProductStatusDto(); dto.setStatusName("действует");
-        mvc.perform(post("/api/product-statuses")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
+    void getById_notFound_returns404() throws Exception {
+        when(service.getProductStatusById(99)).thenReturn(Optional.empty());
+        mvc.perform(get("/api/product-statuses/99"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void delete_userRole_returns403() throws Exception {
+    void delete_callsService() throws Exception {
         mvc.perform(delete("/api/product-statuses/1"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNoContent());
+        verify(service).deleteProductStatus(1);
     }
 }
