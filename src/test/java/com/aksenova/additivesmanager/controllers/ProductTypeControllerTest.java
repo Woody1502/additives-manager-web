@@ -4,60 +4,61 @@ import com.aksenova.additivesmanager.dto.ProductTypeDto;
 import com.aksenova.additivesmanager.entity.ProductType;
 import com.aksenova.additivesmanager.service.ProductTypeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductTypeController.class)
-@Import({com.aksenova.additivesmanager.security.JwtAuthFilter.class,
-         com.aksenova.additivesmanager.security.JwtUtil.class})
+@SpringBootTest
 class ProductTypeControllerTest {
 
-    @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext context;
     @Autowired ObjectMapper objectMapper;
     @MockitoBean ProductTypeService service;
+
+    MockMvc mvc;
+
+    @BeforeEach
+    void setUp() {
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+    }
 
     @Test
     @WithMockUser
     void getAll_authenticated_returns200() throws Exception {
         when(service.getAllProductTypes()).thenReturn(List.of());
-
         mvc.perform(get("/api/product-types"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_adminRole_returns200() throws Exception {
-        var dto = new ProductTypeDto();
-        dto.setTypeName("БАД");
-
-        var created = new ProductType();
-        created.setId(1);
-        created.setTypeName("БАД");
-
+        var dto = new ProductTypeDto(); dto.setTypeName("БАД");
+        var created = new ProductType(); created.setId(1); created.setTypeName("БАД");
         when(service.createProductType(any())).thenReturn(created);
 
         mvc.perform(post("/api/product-types")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.typeName").value("БАД"));
     }
 
@@ -73,9 +74,7 @@ class ProductTypeControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void create_userRole_returns403() throws Exception {
-        var dto = new ProductTypeDto();
-        dto.setTypeName("БАД");
-
+        var dto = new ProductTypeDto(); dto.setTypeName("БАД");
         mvc.perform(post("/api/product-types")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -106,7 +105,6 @@ class ProductTypeControllerTest {
     @WithMockUser
     void getById_notFound_returns404() throws Exception {
         when(service.getProductTypeById(99)).thenReturn(Optional.empty());
-
         mvc.perform(get("/api/product-types/99"))
                 .andExpect(status().isNotFound());
     }

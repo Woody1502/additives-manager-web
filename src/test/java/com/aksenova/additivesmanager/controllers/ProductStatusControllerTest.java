@@ -4,14 +4,17 @@ import com.aksenova.additivesmanager.dto.ProductStatusDto;
 import com.aksenova.additivesmanager.entity.ProductStatus;
 import com.aksenova.additivesmanager.service.ProductStatusService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
@@ -20,20 +23,26 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductStatusController.class)
-@Import({com.aksenova.additivesmanager.security.JwtAuthFilter.class,
-         com.aksenova.additivesmanager.security.JwtUtil.class})
+@SpringBootTest
 class ProductStatusControllerTest {
 
-    @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext context;
     @Autowired ObjectMapper objectMapper;
     @MockitoBean ProductStatusService service;
+
+    MockMvc mvc;
+
+    @BeforeEach
+    void setUp() {
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+    }
 
     @Test
     @WithMockUser
     void getAll_authenticated_returns200() throws Exception {
         when(service.getAllProductStatuses()).thenReturn(List.of());
-
         mvc.perform(get("/api/product-statuses"))
                 .andExpect(status().isOk());
     }
@@ -41,13 +50,8 @@ class ProductStatusControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_adminRole_returns200() throws Exception {
-        var dto = new ProductStatusDto();
-        dto.setStatusName("действует");
-
-        var created = new ProductStatus();
-        created.setId(1);
-        created.setStatusName("действует");
-
+        var dto = new ProductStatusDto(); dto.setStatusName("действует");
+        var created = new ProductStatus(); created.setId(1); created.setStatusName("действует");
         when(service.createProductStatus(any())).thenReturn(created);
 
         mvc.perform(post("/api/product-statuses")
@@ -69,9 +73,7 @@ class ProductStatusControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void create_userRole_returns403() throws Exception {
-        var dto = new ProductStatusDto();
-        dto.setStatusName("действует");
-
+        var dto = new ProductStatusDto(); dto.setStatusName("действует");
         mvc.perform(post("/api/product-statuses")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
